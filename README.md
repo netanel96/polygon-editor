@@ -1,2 +1,6 @@
 # polygon-editore
-web app to create polygons on a canvas
+web app that create polygons on a canvas
+
+tech-stack:
+frontend: React ,ts
+backend:node ,ts,express,mongo
