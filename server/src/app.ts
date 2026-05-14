@@ -11,6 +11,7 @@ import {
   type PolygonModelLike,
 } from './routes/polygonRoutes';
 
+import { config } from './config';
 import { logger } from './utils/logger';
 import { sleep } from './utils/sleep';
 
@@ -43,7 +44,16 @@ export function createApp(options: AppOptions = {}) {
 
   app.use(
     cors({
-      origin: process.env.CLIENT_URL,
+      origin(origin, callback) {
+        if (!origin || config.clientUrls.includes(origin)) {
+          callback(null, true);
+          return;
+        }
+
+        callback(
+          new Error(`CORS blocked origin: ${origin}`),
+        );
+      },
     }),
   );
 

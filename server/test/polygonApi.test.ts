@@ -137,6 +137,28 @@ describe('polygon API', () => {
     });
   });
 
+  it('allows browser preflight requests from local client origins', async () => {
+    const polygonModel = createTestPolygonModel();
+
+    await withApi(polygonModel, async baseUrl => {
+      const response = await fetch(`${baseUrl}/polygons`, {
+        method: 'OPTIONS',
+        headers: {
+          Origin: 'http://127.0.0.1:5173',
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers':
+            'content-type',
+        },
+      });
+
+      assert.equal(response.status, 204);
+      assert.equal(
+        response.headers.get('access-control-allow-origin'),
+        'http://127.0.0.1:5173',
+      );
+    });
+  });
+
   it('creates a polygon and returns the created record', async () => {
     const polygonModel = createTestPolygonModel();
     const polygon = {

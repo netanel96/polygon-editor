@@ -2,22 +2,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 
+import { config } from '../config';
+
 type LogLevel = 'info' | 'error';
 
 type LogDetails = Record<string, unknown>;
 
-const LOG_FILE_PATH =
-  process.env.LOG_FILE_PATH ?? 'logs/server.log';
-
-const LOG_OUTPUT = (
-  process.env.LOG_OUTPUT ?? 'console,file'
-)
+const LOG_OUTPUT = config.logOutput
   .split(',')
   .map(output => output.trim().toLowerCase())
   .filter(Boolean);
-
-const LOG_TRANSPORT =
-  process.env.LOG_TRANSPORT ?? 'local';
 
 function serialize(value: unknown) {
   if (value instanceof Error) {
@@ -40,7 +34,7 @@ function formatLog(
     timestamp: new Date().toISOString(),
     level,
     message,
-    transport: LOG_TRANSPORT,
+    transport: config.logTransport,
     details: Object.fromEntries(
       Object.entries(details).map(([key, value]) => [
         key,
@@ -51,13 +45,13 @@ function formatLog(
 }
 
 function writeToFile(line: string) {
-  const logDirectory = path.dirname(LOG_FILE_PATH);
+  const logDirectory = path.dirname(config.logFilePath);
 
   fs.mkdirSync(logDirectory, {
     recursive: true,
   });
 
-  fs.appendFileSync(LOG_FILE_PATH, `${line}\n`);
+  fs.appendFileSync(config.logFilePath, `${line}\n`);
 }
 
 function writeLog(

@@ -1,22 +1,17 @@
-import dotenv from 'dotenv';
-
 import mongoose from 'mongoose';
 
 import app from './app';
+import { config } from './config';
 import { logger } from './utils/logger';
 
-dotenv.config();
-
 async function startServer() {
-  await mongoose.connect(
-    process.env.MONGO_URL!,
-  );
+  await mongoose.connect(config.mongoUrl);
 
   logger.info('mongodb connected');
 
-  app.listen(process.env.PORT, () => {
+  app.listen(config.port, () => {
     logger.info('server started', {
-      port: process.env.PORT,
+      port: config.port,
     });
   });
 }

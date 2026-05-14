@@ -1,6 +1,6 @@
 import { Polygon, Point } from '../types/polygon';
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { config } from '../config';
 
 type ServerPolygon = {
   id: string;
@@ -24,7 +24,7 @@ function toServerPoints(points: Point[]): number[][] {
 }
 
 export async function fetchPolygons(): Promise<Polygon[]> {
-  const response = await fetch(`${API_URL}/polygons`);
+  const response = await fetch(`${config.apiUrl}/polygons`);
 
   if (!response.ok) {
     throw new Error('Failed to fetch polygons');
@@ -38,7 +38,7 @@ export async function fetchPolygons(): Promise<Polygon[]> {
 export async function createPolygon(
   polygon: Polygon,
 ): Promise<Polygon> {
-  const response = await fetch(`${API_URL}/polygons`, {
+  const response = await fetch(`${config.apiUrl}/polygons`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -59,7 +59,7 @@ export async function createPolygon(
 }
 
 export async function deletePolygon(id: string) {
-  const response = await fetch(`${API_URL}/polygons/${id}`, {
+  const response = await fetch(`${config.apiUrl}/polygons/${id}`, {
     method: 'DELETE',
   });
 

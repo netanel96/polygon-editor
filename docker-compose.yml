@@ -8,7 +8,7 @@ services:
     environment:
       PORT: 4000
       MONGO_URL: ${MONGO_URL:-mongodb://host.docker.internal:27017/polygon-editor}
-      CLIENT_URL: http://localhost:5173
+      CLIENT_URL: http://localhost:5173,http://127.0.0.1:5173
       LOG_FILE_PATH: /app/logs/server.log
       LOG_OUTPUT: console,file
       LOG_TRANSPORT: local
