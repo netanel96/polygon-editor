@@ -1,114 +1,118 @@
-import { Polygon, Point } from '../types/polygon';
+import { Polygon } from '../types/polygon';
 
 import { config } from '../config';
 
-type ServerPolygon = {
-  id: string;
-  name: string;
-  points: number[][];
-};
+import type { PolygonEvent, ServerPolygon } from './polygonDto';
+import type {
+  PolygonGateway,
+  PolygonSubscriptionHandlers,
+} from './polygonGateway';
+import {
+  toClientPolygon,
+  toServerPoints,
+} from './polygonMapper';
 
-type PolygonEvent =
-  | {
-      type: 'created';
-      polygon: ServerPolygon;
+export class HttpPolygonGateway implements PolygonGateway {
+  private readonly apiUrl: string;
+
+  constructor(apiUrl: string) {
+    this.apiUrl = apiUrl;
+  }
+
+  async fetchAll(): Promise<Polygon[]> {
+    const response = await fetch(`${this.apiUrl}/polygons`);
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch polygons');
     }
-  | {
-      type: 'deleted';
-      id: string;
+
+    const data: ServerPolygon[] = await response.json();
+
+    return data.map(toClientPolygon);
+  }
+
+  async create(polygon: Polygon): Promise<Polygon> {
+    const response = await fetch(`${this.apiUrl}/polygons`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        name: polygon.name,
+        points: toServerPoints(polygon.points),
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to create polygon');
+    }
+
+    const data: ServerPolygon = await response.json();
+
+    return toClientPolygon(data);
+  }
+
+  async deleteById(id: string) {
+    const response = await fetch(
+      `${this.apiUrl}/polygons/${id}`,
+      {
+        method: 'DELETE',
+      },
+    );
+
+    if (!response.ok) {
+      throw new Error('Failed to delete polygon');
+    }
+  }
+
+  subscribe({
+    onCreate,
+    onDelete,
+    onError,
+  }: PolygonSubscriptionHandlers) {
+    const source = new EventSource(
+      `${this.apiUrl}/polygons/events`,
+    );
+
+    source.onmessage = event => {
+      const data = JSON.parse(event.data) as PolygonEvent;
+
+      if (data.type === 'created') {
+        onCreate(toClientPolygon(data.polygon));
+        return;
+      }
+
+      onDelete(data.id);
     };
 
-type PolygonSubscriptionHandlers = {
-  onCreate: (polygon: Polygon) => void;
-  onDelete: (id: string) => void;
-  onError?: () => void;
-};
+    source.onerror = () => {
+      onError?.();
+    };
 
-function toClientPolygon(serverPolygon: ServerPolygon): Polygon {
-  return {
-    id: serverPolygon.id,
-    name: serverPolygon.name,
-    points: serverPolygon.points.map(([x, y]) => ({
-      x,
-      y,
-    })),
-  };
-}
-
-function toServerPoints(points: Point[]): number[][] {
-  return points.map(point => [point.x, point.y]);
-}
-
-export async function fetchPolygons(): Promise<Polygon[]> {
-  const response = await fetch(`${config.apiUrl}/polygons`);
-
-  if (!response.ok) {
-    throw new Error('Failed to fetch polygons');
+    return () => {
+      source.close();
+    };
   }
-
-  const data: ServerPolygon[] = await response.json();
-
-  return data.map(toClientPolygon);
 }
 
-export async function createPolygon(
-  polygon: Polygon,
-): Promise<Polygon> {
-  const response = await fetch(`${config.apiUrl}/polygons`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      name: polygon.name,
-      points: toServerPoints(polygon.points),
-    }),
-  });
+export const polygonGateway = new HttpPolygonGateway(
+  config.apiUrl,
+);
 
-  if (!response.ok) {
-    throw new Error('Failed to create polygon');
-  }
+export async function fetchPolygons() {
+  return polygonGateway.fetchAll();
+}
 
-  const data: ServerPolygon = await response.json();
-
-  return toClientPolygon(data);
+export async function createPolygon(polygon: Polygon) {
+  return polygonGateway.create(polygon);
 }
 
 export async function deletePolygon(id: string) {
-  const response = await fetch(`${config.apiUrl}/polygons/${id}`, {
-    method: 'DELETE',
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to delete polygon');
-  }
+  return polygonGateway.deleteById(id);
 }
 
-export function subscribeToPolygonChanges({
-  onCreate,
-  onDelete,
-  onError,
-}: PolygonSubscriptionHandlers) {
-  const source = new EventSource(
-    `${config.apiUrl}/polygons/events`,
-  );
-
-  source.onmessage = event => {
-    const data = JSON.parse(event.data) as PolygonEvent;
-
-    if (data.type === 'created') {
-      onCreate(toClientPolygon(data.polygon));
-      return;
-    }
-
-    onDelete(data.id);
-  };
-
-  source.onerror = () => {
-    onError?.();
-  };
-
-  return () => {
-    source.close();
-  };
+export function subscribeToPolygonChanges(
+  handlers: PolygonSubscriptionHandlers,
+) {
+  return polygonGateway.subscribe(handlers);
 }

@@ -2,18 +2,34 @@
   box-sizing: border-box;
 }
 
+html {
+  background: #0b1020;
+}
+
 body {
   margin: 0;
   font-family:
     "Inter",
-    "Aptos",
+    "Segoe UI Variable Display",
     "Segoe UI Variable",
+    "Aptos",
     "Segoe UI",
-    "Helvetica Neue",
+    ui-sans-serif,
+    system-ui,
     Arial,
     sans-serif;
   background: #0b1020;
   color: white;
+  overflow-x: auto;
+  overflow-y: hidden;
+  font-feature-settings:
+    "cv02" 1,
+    "cv03" 1,
+    "cv04" 1;
+  font-variation-settings: "opsz" 14;
+  text-rendering: geometricPrecision;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 button {
@@ -61,6 +77,7 @@ button:disabled {
 .app-shell {
   display: flex;
   height: 100vh;
+  min-width: 1120px;
   overflow: hidden;
 }
 

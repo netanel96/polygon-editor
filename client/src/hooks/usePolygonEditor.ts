@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 import {
   createPolygon,
@@ -8,6 +8,33 @@ import {
 } from '../api/polygonApi';
 
 import { Point, Polygon } from '../types/polygon';
+import {
+  removePolygonById,
+  replaceOptimisticPolygon,
+  upsertPolygon,
+} from '../utils/polygonCollection';
+
+import { useActivePolygon } from './useActivePolygon';
+
+function getRemainingPointMessage(pointCount: number) {
+  const remainingPointCount = 3 - pointCount;
+
+  return `Add ${remainingPointCount} more point${
+    remainingPointCount === 1 ? '' : 's'
+  } to finish this polygon.`;
+}
+
+function createOptimisticPolygon(
+  index: number,
+  points: Point[],
+): Polygon {
+  return {
+    id: `temp-${crypto.randomUUID()}`,
+    name: `Polygon ${index}`,
+    points,
+    pending: true,
+  };
+}
 
 export function usePolygonEditor() {
   const [polygons, setPolygons] = useState<Polygon[]>([]);
@@ -15,40 +42,17 @@ export function usePolygonEditor() {
   const [hoveredDeleteId, setHoveredDeleteId] =
     useState<string | null>(null);
 
-  const [isDrawing, setIsDrawing] = useState(false);
-
   const [loading, setLoading] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
 
-  const activePolygonRef = useRef<Point[]>([]);
-
-  const [activePointCount, setActivePointCount] =
-    useState(0);
+  const activePolygon = useActivePolygon();
 
   function clearError() {
     setError(null);
   }
 
-  function upsertPolygon(nextPolygon: Polygon) {
-    setPolygons(prev => {
-      const existingIndex = prev.findIndex(
-        polygon => polygon.id === nextPolygon.id,
-      );
-
-      if (existingIndex === -1) {
-        return [...prev, nextPolygon];
-      }
-
-      return prev.map(polygon =>
-        polygon.id === nextPolygon.id
-          ? nextPolygon
-          : polygon,
-      );
-    });
-  }
-
-  async function loadPolygons() {
+  const loadPolygons = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -61,42 +65,33 @@ export function usePolygonEditor() {
     } finally {
       setLoading(false);
     }
-  }
-
-  useEffect(() => {
-    loadPolygons();
   }, []);
 
   useEffect(() => {
+    loadPolygons();
+  }, [loadPolygons]);
+
+  useEffect(() => {
     return subscribeToPolygonChanges({
-      onCreate: upsertPolygon,
+      onCreate: polygon => {
+        setPolygons(prev => upsertPolygon(prev, polygon));
+      },
       onDelete: id => {
-        setPolygons(prev =>
-          prev.filter(polygon => polygon.id !== id),
-        );
+        setPolygons(prev => removePolygonById(prev, id));
       },
     });
   }, []);
 
   function startDrawing() {
-    activePolygonRef.current = [];
-
-    setActivePointCount(0);
-
-    setIsDrawing(true);
+    activePolygon.start();
   }
 
   function addPoint(point: Point) {
-    activePolygonRef.current.push(point);
-
-    setActivePointCount(activePolygonRef.current.length);
+    activePolygon.addPoint(point);
   }
 
   function clearEditedPolygon() {
-    activePolygonRef.current = [];
-
-    setActivePointCount(0);
-    setIsDrawing(false);
+    activePolygon.clear();
     setError(null);
   }
 
@@ -107,34 +102,22 @@ export function usePolygonEditor() {
   }
 
   async function finishPolygon() {
-    const points = [...activePolygonRef.current];
+    const points = [...activePolygon.pointsRef.current];
 
     if (points.length < 3) {
-      const remainingPointCount = 3 - points.length;
-
-      setError(
-        `Add ${remainingPointCount} more point${
-          remainingPointCount === 1 ? '' : 's'
-        } to finish this polygon.`,
-      );
+      setError(getRemainingPointMessage(points.length));
 
       return;
     }
 
-    const optimisticPolygon: Polygon = {
-      id: `temp-${crypto.randomUUID()}`,
-      name: `Polygon ${polygons.length + 1}`,
+    const optimisticPolygon = createOptimisticPolygon(
+      polygons.length + 1,
       points,
-      pending: true,
-    };
+    );
 
     setPolygons(prev => [...prev, optimisticPolygon]);
 
-    activePolygonRef.current = [];
-
-    setActivePointCount(0);
-
-    setIsDrawing(false);
+    activePolygon.clear();
 
     try {
       setError(null);
@@ -143,27 +126,17 @@ export function usePolygonEditor() {
         await createPolygon(optimisticPolygon);
 
       setPolygons(prev => {
-        const withoutOptimistic = prev.filter(
-          polygon => polygon.id !== optimisticPolygon.id,
+        return replaceOptimisticPolygon(
+          prev,
+          optimisticPolygon.id,
+          createdPolygon,
         );
-        const existingSaved = withoutOptimistic.some(
-          polygon => polygon.id === createdPolygon.id,
-        );
-
-        if (existingSaved) {
-          return withoutOptimistic.map(polygon =>
-            polygon.id === createdPolygon.id
-              ? createdPolygon
-              : polygon,
-          );
-        }
-
-        return [...withoutOptimistic, createdPolygon];
       });
     } catch {
       setPolygons(prev =>
-        prev.filter(
-          polygon => polygon.id !== optimisticPolygon.id,
+        removePolygonById(
+          prev,
+          optimisticPolygon.id,
         ),
       );
 
@@ -181,7 +154,7 @@ export function usePolygonEditor() {
     }
 
     setPolygons(prev =>
-      prev.filter(polygon => polygon.id !== id),
+      removePolygonById(prev, id),
     );
 
     try {
@@ -199,9 +172,9 @@ export function usePolygonEditor() {
     polygons,
     hoveredDeleteId,
     setHoveredDeleteId,
-    activePolygonRef,
-    isDrawing,
-    activePointCount,
+    activePolygonRef: activePolygon.pointsRef,
+    isDrawing: activePolygon.isDrawing,
+    activePointCount: activePolygon.pointCount,
     loading,
     error,
     startDrawing,

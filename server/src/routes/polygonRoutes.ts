@@ -1,90 +1,45 @@
 import express from 'express';
 
-import { z } from 'zod';
-
-import { PolygonModel } from '../models/polygonModel';
-
 import { config } from '../config';
+import {
+  SsePolygonEventBroker,
+  type PolygonEventBroker,
+} from '../polygons/polygonEventBroker';
+import {
+  createDefaultPolygonRepository,
+  MongoosePolygonRepository,
+  type PolygonModelLike,
+} from '../polygons/mongoosePolygonRepository';
+import type { PolygonRepository } from '../polygons/polygonTypes';
+import { createPolygonSchema } from '../polygons/polygonValidation';
 import { sleep } from '../utils/sleep';
 
-type PolygonRecord = {
-  _id: unknown;
-  name: string;
-  points: number[][];
-};
-
-type PolygonEvent =
-  | {
-      type: 'created';
-      polygon: {
-        id: string;
-        name: string;
-        points: number[][];
-      };
-    }
-  | {
-      type: 'deleted';
-      id: string;
-    };
-
-export type PolygonModelLike = {
-  find: () => {
-    lean: () => Promise<PolygonRecord[]>;
-  };
-  create: (polygon: {
-    name: string;
-    points: number[][];
-  }) => Promise<PolygonRecord>;
-  findByIdAndDelete: (
-    id: string,
-  ) => Promise<unknown>;
-};
+export type { PolygonModelLike };
 
 type PolygonRouterOptions = {
+  eventBroker?: PolygonEventBroker;
   polygonModel?: PolygonModelLike;
+  polygonRepository?: PolygonRepository;
   wait?: (ms: number) => Promise<unknown>;
 };
 
-const createPolygonSchema = z.object({
-  name: z.string().min(1),
-
-  points: z.array(z.array(z.number())).min(3),
-});
-
-function serializePolygon(polygon: PolygonRecord) {
-  return {
-    id: String(polygon._id),
-
-    name: polygon.name,
-
-    points: polygon.points,
-  };
-}
-
 export function createPolygonRouter({
+  eventBroker = new SsePolygonEventBroker(),
   polygonModel,
+  polygonRepository,
   wait = sleep,
 }: PolygonRouterOptions = {}) {
   const router = express.Router();
-  const model =
-    polygonModel ??
-    (PolygonModel as unknown as PolygonModelLike);
-  const eventClients = new Set<express.Response>();
-
-  function publish(event: PolygonEvent) {
-    const payload = `data: ${JSON.stringify(event)}\n\n`;
-
-    for (const client of eventClients) {
-      client.write(payload);
-    }
-  }
+  const repository =
+    polygonRepository ??
+    (polygonModel
+      ? new MongoosePolygonRepository(polygonModel)
+      : createDefaultPolygonRepository());
 
   router.get('/', async (_, response) => {
     await wait(config.apiRequestDelayMs);
 
-    const polygons = await model.find().lean();
-
-    response.json(polygons.map(serializePolygon));
+    response.json(await repository.findAll());
   });
 
   router.get('/events', (request, response) => {
@@ -95,11 +50,10 @@ export function createPolygonRouter({
 
     response.write(': connected\n\n');
 
-    eventClients.add(response);
+    const unsubscribe = eventBroker.subscribe(response);
 
     request.on('close', () => {
-      eventClients.delete(response);
-      response.end();
+      unsubscribe();
     });
   });
 
@@ -110,29 +64,25 @@ export function createPolygonRouter({
       request.body,
     );
 
-    const polygon = await model.create({
+    const polygon = await repository.create({
       name: parsed.name,
       points: parsed.points,
     });
 
-    const serializedPolygon = serializePolygon(polygon);
-
-    publish({
+    eventBroker.publish({
       type: 'created',
-      polygon: serializedPolygon,
+      polygon,
     });
 
-    response.json(serializedPolygon);
+    response.json(polygon);
   });
 
   router.delete('/:id', async (request, response) => {
     await wait(config.apiRequestDelayMs);
 
-    await model.findByIdAndDelete(
-      request.params.id,
-    );
+    await repository.deleteById(request.params.id);
 
-    publish({
+    eventBroker.publish({
       type: 'deleted',
       id: request.params.id,
     });

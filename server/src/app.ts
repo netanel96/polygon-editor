@@ -5,10 +5,8 @@ import mongoose from 'mongoose';
 
 import { ZodError } from 'zod';
 
-import {
-  createPolygonRouter,
-  type PolygonModelLike,
-} from './routes/polygonRoutes';
+import type { PolygonModelLike } from './polygons/mongoosePolygonRepository';
+import { createPolygonRouter } from './routes/polygonRoutes';
 
 import { config } from './config';
 import { logger } from './utils/logger';
