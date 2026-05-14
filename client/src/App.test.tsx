@@ -23,6 +23,8 @@ const api = vi.hoisted(() => ({
   createPolygon:
     vi.fn<(polygon: Polygon) => Promise<Polygon>>(),
   deletePolygon: vi.fn<(id: string) => Promise<void>>(),
+  subscribeToPolygonChanges:
+    vi.fn<() => () => void>(),
 }));
 
 vi.mock('./api/polygonApi', () => api);
@@ -109,6 +111,7 @@ describe('App polygon operations', () => {
       pending: undefined,
     }));
     api.deletePolygon.mockResolvedValue(undefined);
+    api.subscribeToPolygonChanges.mockReturnValue(() => {});
   });
 
   it('loads polygons from the API and shows them in the list', async () => {
@@ -120,7 +123,7 @@ describe('App polygon operations', () => {
     expect(
       await screen.findByText('Triangle'),
     ).toBeInTheDocument();
-    expect(screen.getByText('(0.0, 0.0)')).toBeInTheDocument();
+    expect(screen.getByText('0.0, 0.0')).toBeInTheDocument();
   });
 
   it('creates a polygon optimistically and replaces it with the saved polygon', async () => {

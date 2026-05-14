@@ -4,6 +4,7 @@ import {
   createPolygon,
   deletePolygon,
   fetchPolygons,
+  subscribeToPolygonChanges,
 } from '../api/polygonApi';
 
 import { Point, Polygon } from '../types/polygon';
@@ -29,6 +30,24 @@ export function usePolygonEditor() {
     setError(null);
   }
 
+  function upsertPolygon(nextPolygon: Polygon) {
+    setPolygons(prev => {
+      const existingIndex = prev.findIndex(
+        polygon => polygon.id === nextPolygon.id,
+      );
+
+      if (existingIndex === -1) {
+        return [...prev, nextPolygon];
+      }
+
+      return prev.map(polygon =>
+        polygon.id === nextPolygon.id
+          ? nextPolygon
+          : polygon,
+      );
+    });
+  }
+
   async function loadPolygons() {
     try {
       setLoading(true);
@@ -46,6 +65,17 @@ export function usePolygonEditor() {
 
   useEffect(() => {
     loadPolygons();
+  }, []);
+
+  useEffect(() => {
+    return subscribeToPolygonChanges({
+      onCreate: upsertPolygon,
+      onDelete: id => {
+        setPolygons(prev =>
+          prev.filter(polygon => polygon.id !== id),
+        );
+      },
+    });
   }, []);
 
   function startDrawing() {
@@ -112,13 +142,24 @@ export function usePolygonEditor() {
       const createdPolygon =
         await createPolygon(optimisticPolygon);
 
-      setPolygons(prev =>
-        prev.map(polygon =>
-          polygon.id === optimisticPolygon.id
-            ? createdPolygon
-            : polygon,
-        ),
-      );
+      setPolygons(prev => {
+        const withoutOptimistic = prev.filter(
+          polygon => polygon.id !== optimisticPolygon.id,
+        );
+        const existingSaved = withoutOptimistic.some(
+          polygon => polygon.id === createdPolygon.id,
+        );
+
+        if (existingSaved) {
+          return withoutOptimistic.map(polygon =>
+            polygon.id === createdPolygon.id
+              ? createdPolygon
+              : polygon,
+          );
+        }
+
+        return [...withoutOptimistic, createdPolygon];
+      });
     } catch {
       setPolygons(prev =>
         prev.filter(

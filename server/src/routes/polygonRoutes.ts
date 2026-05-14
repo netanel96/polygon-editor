@@ -13,6 +13,20 @@ type PolygonRecord = {
   points: number[][];
 };
 
+type PolygonEvent =
+  | {
+      type: 'created';
+      polygon: {
+        id: string;
+        name: string;
+        points: number[][];
+      };
+    }
+  | {
+      type: 'deleted';
+      id: string;
+    };
+
 export type PolygonModelLike = {
   find: () => {
     lean: () => Promise<PolygonRecord[]>;
@@ -37,6 +51,16 @@ const createPolygonSchema = z.object({
   points: z.array(z.array(z.number())).min(3),
 });
 
+function serializePolygon(polygon: PolygonRecord) {
+  return {
+    id: String(polygon._id),
+
+    name: polygon.name,
+
+    points: polygon.points,
+  };
+}
+
 export function createPolygonRouter({
   polygonModel,
   wait = sleep,
@@ -45,21 +69,38 @@ export function createPolygonRouter({
   const model =
     polygonModel ??
     (PolygonModel as unknown as PolygonModelLike);
+  const eventClients = new Set<express.Response>();
+
+  function publish(event: PolygonEvent) {
+    const payload = `data: ${JSON.stringify(event)}\n\n`;
+
+    for (const client of eventClients) {
+      client.write(payload);
+    }
+  }
 
   router.get('/', async (_, response) => {
     await wait(config.apiRequestDelayMs);
 
     const polygons = await model.find().lean();
 
-    response.json(
-      polygons.map(polygon => ({
-        id: polygon._id,
+    response.json(polygons.map(serializePolygon));
+  });
 
-        name: polygon.name,
+  router.get('/events', (request, response) => {
+    response.setHeader('Content-Type', 'text/event-stream');
+    response.setHeader('Cache-Control', 'no-cache');
+    response.setHeader('Connection', 'keep-alive');
+    response.flushHeaders?.();
 
-        points: polygon.points,
-      })),
-    );
+    response.write(': connected\n\n');
+
+    eventClients.add(response);
+
+    request.on('close', () => {
+      eventClients.delete(response);
+      response.end();
+    });
   });
 
   router.post('/', async (request, response) => {
@@ -74,13 +115,14 @@ export function createPolygonRouter({
       points: parsed.points,
     });
 
-    response.json({
-      id: polygon._id,
+    const serializedPolygon = serializePolygon(polygon);
 
-      name: polygon.name,
-
-      points: polygon.points,
+    publish({
+      type: 'created',
+      polygon: serializedPolygon,
     });
+
+    response.json(serializedPolygon);
   });
 
   router.delete('/:id', async (request, response) => {
@@ -89,6 +131,11 @@ export function createPolygonRouter({
     await model.findByIdAndDelete(
       request.params.id,
     );
+
+    publish({
+      type: 'deleted',
+      id: request.params.id,
+    });
 
     response.json({
       success: true,

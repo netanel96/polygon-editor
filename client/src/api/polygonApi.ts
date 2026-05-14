@@ -8,6 +8,22 @@ type ServerPolygon = {
   points: number[][];
 };
 
+type PolygonEvent =
+  | {
+      type: 'created';
+      polygon: ServerPolygon;
+    }
+  | {
+      type: 'deleted';
+      id: string;
+    };
+
+type PolygonSubscriptionHandlers = {
+  onCreate: (polygon: Polygon) => void;
+  onDelete: (id: string) => void;
+  onError?: () => void;
+};
+
 function toClientPolygon(serverPolygon: ServerPolygon): Polygon {
   return {
     id: serverPolygon.id,
@@ -66,4 +82,33 @@ export async function deletePolygon(id: string) {
   if (!response.ok) {
     throw new Error('Failed to delete polygon');
   }
+}
+
+export function subscribeToPolygonChanges({
+  onCreate,
+  onDelete,
+  onError,
+}: PolygonSubscriptionHandlers) {
+  const source = new EventSource(
+    `${config.apiUrl}/polygons/events`,
+  );
+
+  source.onmessage = event => {
+    const data = JSON.parse(event.data) as PolygonEvent;
+
+    if (data.type === 'created') {
+      onCreate(toClientPolygon(data.polygon));
+      return;
+    }
+
+    onDelete(data.id);
+  };
+
+  source.onerror = () => {
+    onError?.();
+  };
+
+  return () => {
+    source.close();
+  };
 }
