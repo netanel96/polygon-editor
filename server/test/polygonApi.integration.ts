@@ -7,7 +7,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
 import { createApp } from '../src/app';
-import { API_REQUEST_DELAY_MS } from '../src/utils/sleep';
+import { config } from '../src/config';
 
 dotenv.config();
 
@@ -72,8 +72,6 @@ describe('polygon API MongoDB integration', () => {
   });
 
   it('creates, reads, and deletes polygons through real MongoDB', async () => {
-    const startedAt = Date.now();
-
     const polygon = {
       name: 'Mongo Triangle',
       points: [
@@ -139,9 +137,6 @@ describe('polygon API MongoDB integration', () => {
     assert.equal(emptyListResponse.status, 200);
     assert.deepEqual(await emptyListResponse.json(), []);
 
-    assert.ok(
-      Date.now() - startedAt >= API_REQUEST_DELAY_MS * 4,
-      'integration flow should include the real API request delay',
-    );
+    assert.equal(config.apiRequestDelayMs, 0);
   });
 });

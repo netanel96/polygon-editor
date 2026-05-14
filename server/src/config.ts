@@ -12,6 +12,14 @@ const configuredClientUrls = (process.env.CLIENT_URL ?? '')
   .map(origin => origin.trim())
   .filter(Boolean);
 
+function getApiRequestDelayMs() {
+  if (process.env.NODE_ENV === 'test') {
+    return 0;
+  }
+
+  return Number(process.env.API_REQUEST_DELAY_MS ?? 5000);
+}
+
 export const config = {
   port: process.env.PORT ?? '4000',
   mongoUrl:
@@ -27,4 +35,5 @@ export const config = {
     process.env.LOG_FILE_PATH ?? 'logs/server.log',
   logOutput: process.env.LOG_OUTPUT ?? 'console,file',
   logTransport: process.env.LOG_TRANSPORT ?? 'local',
+  apiRequestDelayMs: getApiRequestDelayMs(),
 };

@@ -25,23 +25,57 @@ function serialize(value: unknown) {
   return value;
 }
 
+function formatValue(value: unknown) {
+  const serialized = serialize(value);
+
+  if (serialized === undefined) {
+    return undefined;
+  }
+
+  if (
+    typeof serialized === 'string' ||
+    typeof serialized === 'number' ||
+    typeof serialized === 'boolean'
+  ) {
+    return String(serialized);
+  }
+
+  return JSON.stringify(serialized);
+}
+
+function formatDetails(details: LogDetails) {
+  return Object.entries(details)
+    .map(([key, value]) => {
+      const formattedValue = formatValue(value);
+
+      if (formattedValue === undefined) {
+        return undefined;
+      }
+
+      return `${key}=${formattedValue}`;
+    })
+    .filter(Boolean)
+    .join(' ');
+}
+
 function formatLog(
   level: LogLevel,
   message: string,
   details: LogDetails = {},
 ) {
-  return JSON.stringify({
-    timestamp: new Date().toISOString(),
-    level,
-    message,
+  const detailsText = formatDetails({
     transport: config.logTransport,
-    details: Object.fromEntries(
-      Object.entries(details).map(([key, value]) => [
-        key,
-        serialize(value),
-      ]),
-    ),
+    ...details,
   });
+
+  return [
+    new Date().toISOString(),
+    level.toUpperCase().padEnd(5),
+    message,
+    detailsText,
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function writeToFile(line: string) {

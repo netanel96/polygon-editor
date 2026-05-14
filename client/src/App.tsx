@@ -25,9 +25,12 @@ export default function App() {
 
         <Toolbar
           isDrawing={editor.isDrawing}
+          activePointCount={editor.activePointCount}
           loading={editor.loading}
           onFinish={editor.finishPolygon}
+          onClearEdit={editor.clearEditedPolygon}
           onLoad={editor.loadPolygons}
+          onClearLoaded={editor.clearLoadedPolygons}
         />
 
         <PolygonCanvas

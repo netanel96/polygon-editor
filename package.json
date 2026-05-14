@@ -2,6 +2,8 @@
   "name": "polygon-editor",
   "private": true,
   "scripts": {
+    "test": "npm --prefix server test && npm --prefix client test",
+    "test:all": "npm --prefix server run test:all && npm --prefix client test",
     "build-all": "docker compose build",
     "docker:up": "docker compose up",
     "docker:down": "docker compose down",

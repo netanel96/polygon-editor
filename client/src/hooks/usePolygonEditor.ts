@@ -22,6 +22,9 @@ export function usePolygonEditor() {
 
   const activePolygonRef = useRef<Point[]>([]);
 
+  const [activePointCount, setActivePointCount] =
+    useState(0);
+
   function clearError() {
     setError(null);
   }
@@ -48,17 +51,43 @@ export function usePolygonEditor() {
   function startDrawing() {
     activePolygonRef.current = [];
 
+    setActivePointCount(0);
+
     setIsDrawing(true);
   }
 
   function addPoint(point: Point) {
     activePolygonRef.current.push(point);
+
+    setActivePointCount(activePolygonRef.current.length);
+  }
+
+  function clearEditedPolygon() {
+    activePolygonRef.current = [];
+
+    setActivePointCount(0);
+    setIsDrawing(false);
+    setError(null);
+  }
+
+  function clearLoadedPolygons() {
+    setPolygons([]);
+    setHoveredDeleteId(null);
+    setError(null);
   }
 
   async function finishPolygon() {
     const points = [...activePolygonRef.current];
 
     if (points.length < 3) {
+      const remainingPointCount = 3 - points.length;
+
+      setError(
+        `Add ${remainingPointCount} more point${
+          remainingPointCount === 1 ? '' : 's'
+        } to finish this polygon.`,
+      );
+
       return;
     }
 
@@ -72,6 +101,8 @@ export function usePolygonEditor() {
     setPolygons(prev => [...prev, optimisticPolygon]);
 
     activePolygonRef.current = [];
+
+    setActivePointCount(0);
 
     setIsDrawing(false);
 
@@ -129,11 +160,14 @@ export function usePolygonEditor() {
     setHoveredDeleteId,
     activePolygonRef,
     isDrawing,
+    activePointCount,
     loading,
     error,
     startDrawing,
     addPoint,
     finishPolygon,
+    clearEditedPolygon,
+    clearLoadedPolygons,
     removePolygon,
     loadPolygons,
     clearError,

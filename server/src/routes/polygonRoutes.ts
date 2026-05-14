@@ -4,10 +4,8 @@ import { z } from 'zod';
 
 import { PolygonModel } from '../models/polygonModel';
 
-import {
-  API_REQUEST_DELAY_MS,
-  sleep,
-} from '../utils/sleep';
+import { config } from '../config';
+import { sleep } from '../utils/sleep';
 
 type PolygonRecord = {
   _id: unknown;
@@ -49,7 +47,7 @@ export function createPolygonRouter({
     (PolygonModel as unknown as PolygonModelLike);
 
   router.get('/', async (_, response) => {
-    await wait(API_REQUEST_DELAY_MS);
+    await wait(config.apiRequestDelayMs);
 
     const polygons = await model.find().lean();
 
@@ -65,7 +63,7 @@ export function createPolygonRouter({
   });
 
   router.post('/', async (request, response) => {
-    await wait(API_REQUEST_DELAY_MS);
+    await wait(config.apiRequestDelayMs);
 
     const parsed = createPolygonSchema.parse(
       request.body,
@@ -86,7 +84,7 @@ export function createPolygonRouter({
   });
 
   router.delete('/:id', async (request, response) => {
-    await wait(API_REQUEST_DELAY_MS);
+    await wait(config.apiRequestDelayMs);
 
     await model.findByIdAndDelete(
       request.params.id,

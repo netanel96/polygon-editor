@@ -37,18 +37,30 @@ vi.mock('./components/PolygonCanvas', () => ({
     finishPolygon: () => void;
     startDrawing: () => void;
   }) => (
-    <button
-      type="button"
-      onClick={() => {
-        startDrawing();
-        addPoint({ x: 0, y: 0 });
-        addPoint({ x: 10, y: 0 });
-        addPoint({ x: 0, y: 10 });
-        void finishPolygon();
-      }}
-    >
-      Draw triangle
-    </button>
+    <div>
+      <button
+        type="button"
+        onClick={() => {
+          startDrawing();
+          addPoint({ x: 0, y: 0 });
+        }}
+      >
+        Draw one point
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          startDrawing();
+          addPoint({ x: 0, y: 0 });
+          addPoint({ x: 10, y: 0 });
+          addPoint({ x: 0, y: 10 });
+          void finishPolygon();
+        }}
+      >
+        Draw triangle
+      </button>
+    </div>
   ),
 }));
 
@@ -163,6 +175,77 @@ describe('App polygon operations', () => {
         }),
       ).toBeEnabled();
     });
+  });
+
+  it('enables finish after the first point and explains when more points are needed', async () => {
+    render(<App />);
+
+    const finishButton = screen.getByRole('button', {
+      name: 'Finish Polygon',
+    });
+
+    expect(finishButton).toBeDisabled();
+
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Draw one point',
+      }),
+    );
+
+    expect(finishButton).toBeEnabled();
+
+    await userEvent.click(finishButton);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Add 2 more points to finish this polygon.',
+    );
+    expect(api.createPolygon).not.toHaveBeenCalled();
+  });
+
+  it('clears the active edited polygon without saving it', async () => {
+    render(<App />);
+
+    await userEvent.click(
+      await screen.findByRole('button', {
+        name: 'Draw one point',
+      }),
+    );
+
+    const finishButton = screen.getByRole('button', {
+      name: 'Finish Polygon',
+    });
+
+    expect(finishButton).toBeEnabled();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Clear Edit',
+      }),
+    );
+
+    expect(finishButton).toBeDisabled();
+    expect(api.createPolygon).not.toHaveBeenCalled();
+  });
+
+  it('clears loaded polygons from the current view without deleting them from the API', async () => {
+    api.fetchPolygons.mockResolvedValue([savedPolygon]);
+
+    render(<App />);
+
+    expect(
+      await screen.findByText('Triangle'),
+    ).toBeInTheDocument();
+
+    await userEvent.click(
+      screen.getByRole('button', {
+        name: 'Clear Loaded',
+      }),
+    );
+
+    expect(
+      screen.queryByText('Triangle'),
+    ).not.toBeInTheDocument();
+    expect(api.deletePolygon).not.toHaveBeenCalled();
   });
 
   it('removes a polygon after a successful delete request', async () => {
