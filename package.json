@@ -1,0 +1,10 @@
+{
+  "name": "polygon-editor",
+  "private": true,
+  "scripts": {
+    "build-all": "docker compose build",
+    "docker:up": "docker compose up",
+    "docker:down": "docker compose down",
+    "docker:logs": "docker compose logs -f"
+  }
+}

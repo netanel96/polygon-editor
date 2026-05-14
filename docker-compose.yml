@@ -1,0 +1,27 @@
+services:
+  server:
+    build:
+      context: ./server
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      MONGO_URL: ${MONGO_URL:-mongodb://host.docker.internal:27017/polygon-editor}
+      CLIENT_URL: http://localhost:5173
+      LOG_FILE_PATH: /app/logs/server.log
+      LOG_OUTPUT: console,file
+      LOG_TRANSPORT: local
+    volumes:
+      - ./server/logs:/app/logs
+
+  client:
+    build:
+      context: ./client
+      args:
+        VITE_API_URL: http://localhost:4000
+    restart: unless-stopped
+    depends_on:
+      - server
+    ports:
+      - "5173:80"
