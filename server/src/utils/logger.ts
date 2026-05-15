@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 
-import { config } from '../config';
+import pino, { type LoggerOptions, type StreamEntry } from 'pino';
 
-type LogLevel = 'info' | 'error';
+import { config } from '../config';
 
 type LogDetails = Record<string, unknown>;
 
@@ -13,111 +13,69 @@ const LOG_OUTPUT = config.logOutput
   .map(output => output.trim().toLowerCase())
   .filter(Boolean);
 
-function serialize(value: unknown) {
-  if (value instanceof Error) {
+function serializeError(error: unknown) {
+  if (error instanceof Error) {
     return {
-      name: value.name,
-      message: value.message,
-      stack: value.stack,
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
     };
   }
 
-  return value;
+  return error;
 }
 
-function formatValue(value: unknown) {
-  const serialized = serialize(value);
-
-  if (serialized === undefined) {
-    return undefined;
-  }
-
-  if (
-    typeof serialized === 'string' ||
-    typeof serialized === 'number' ||
-    typeof serialized === 'boolean'
-  ) {
-    return String(serialized);
-  }
-
-  return JSON.stringify(serialized);
-}
-
-function formatDetails(details: LogDetails) {
-  return Object.entries(details)
-    .map(([key, value]) => {
-      const formattedValue = formatValue(value);
-
-      if (formattedValue === undefined) {
-        return undefined;
-      }
-
-      return `${key}=${formattedValue}`;
-    })
-    .filter(Boolean)
-    .join(' ');
-}
-
-function formatLog(
-  level: LogLevel,
-  message: string,
-  details: LogDetails = {},
-) {
-  const detailsText = formatDetails({
-    transport: config.logTransport,
-    ...details,
-  });
-
-  return [
-    new Date().toISOString(),
-    level.toUpperCase().padEnd(5),
-    message,
-    detailsText,
-  ]
-    .filter(Boolean)
-    .join(' ');
-}
-
-function writeToFile(line: string) {
-  const logDirectory = path.dirname(config.logFilePath);
-
-  fs.mkdirSync(logDirectory, {
-    recursive: true,
-  });
-
-  fs.appendFileSync(config.logFilePath, `${line}\n`);
-}
-
-function writeLog(
-  level: LogLevel,
-  message: string,
-  details?: LogDetails,
-) {
-  const line = formatLog(level, message, details);
-
-  if (LOG_OUTPUT.includes('file')) {
-    writeToFile(line);
-  }
+function createLogStreams(): StreamEntry[] {
+  const streams: StreamEntry[] = [];
 
   if (LOG_OUTPUT.includes('console')) {
-    const output =
-      level === 'error' ? console.error : console.log;
-
-    output(line);
+    streams.push({
+      stream: pino.destination({
+        dest: 1,
+        sync: false,
+      }),
+    });
   }
+
+  if (LOG_OUTPUT.includes('file')) {
+    fs.mkdirSync(path.dirname(config.logFilePath), {
+      recursive: true,
+    });
+
+    streams.push({
+      stream: pino.destination({
+        dest: config.logFilePath,
+        sync: false,
+      }),
+    });
+  }
+
+  return streams;
 }
 
+const loggerOptions: LoggerOptions = {
+  base: {
+    transport: config.logTransport,
+  },
+  timestamp: pino.stdTimeFunctions.isoTime,
+};
+
+const pinoLogger = pino(
+  loggerOptions,
+  pino.multistream(createLogStreams()),
+);
+
 export const logger = {
-  info(message: string, details?: LogDetails) {
-    writeLog('info', message, details);
+  info(message: string, details: LogDetails = {}) {
+    pinoLogger.info(details, message);
   },
 
-  error(message: string, details?: LogDetails) {
-    writeLog('error', message, details);
+  error(message: string, details: LogDetails = {}) {
+    pinoLogger.error(details, message);
   },
 
   childError(error: unknown) {
-    return util.inspect(serialize(error), {
+    return util.inspect(serializeError(error), {
       depth: null,
     });
   },

@@ -5,8 +5,8 @@ import mongoose from 'mongoose';
 
 import { ZodError } from 'zod';
 
-import type { PolygonModelLike } from './polygons/mongoosePolygonRepository';
-import { createPolygonRouter } from './routes/polygonRoutes';
+import type { PolygonModelLike } from './polygons/persistence';
+import { createPolygonRouter } from './polygons/http';
 
 import { config } from './config';
 import { logger } from './utils/logger';

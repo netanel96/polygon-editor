@@ -29,7 +29,7 @@ const api = vi.hoisted(() => ({
 
 vi.mock('./api/polygonApi', () => api);
 
-vi.mock('./components/PolygonCanvas', () => ({
+vi.mock('./components/polygon-canvas', () => ({
   PolygonCanvas: ({
     addPoint,
     finishPolygon,

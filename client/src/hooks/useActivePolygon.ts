@@ -24,14 +24,6 @@ export function useActivePolygon() {
     setIsDrawing(false);
   }
 
-  function consumePoints() {
-    const points = [...pointsRef.current];
-
-    clear();
-
-    return points;
-  }
-
   return {
     pointsRef,
     pointCount,
@@ -39,6 +31,5 @@ export function useActivePolygon() {
     start,
     addPoint,
     clear,
-    consumePoints,
   };
 }

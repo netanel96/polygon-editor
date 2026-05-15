@@ -1,6 +1,7 @@
-import { PolygonCanvas } from './components/PolygonCanvas';
-import { PolygonList } from './components/PolygonList';
-import { Toolbar } from './components/Toolbar';
+import { styles as appShellStyles } from './components/app-shell';
+import { CanvasPanel } from './components/canvas-panel';
+import { Notification } from './components/notification';
+import { Sidebar } from './components/sidebar';
 
 import { usePolygonEditor } from './hooks/usePolygonEditor';
 
@@ -9,50 +10,33 @@ export default function App() {
 
   return (
     <div
-      className="app-shell"
+      className={appShellStyles.shell}
       onPointerDown={editor.clearError}
     >
       {editor.error && (
-        <div className="notification" role="alert">
-          {editor.error}
-        </div>
+        <Notification message={editor.error} />
       )}
 
-      <div className="canvas-panel">
-        <div className="panel-header">
-          <h1>Polygon Editor</h1>
-        </div>
+      <CanvasPanel
+        activePointCount={editor.activePointCount}
+        activePolygonRef={editor.activePolygonRef}
+        hoveredDeleteId={editor.hoveredDeleteId}
+        isDrawing={editor.isDrawing}
+        loading={editor.loading}
+        polygons={editor.polygons}
+        addPoint={editor.addPoint}
+        clearEditedPolygon={editor.clearEditedPolygon}
+        clearLoadedPolygons={editor.clearLoadedPolygons}
+        finishPolygon={editor.finishPolygon}
+        loadPolygons={editor.loadPolygons}
+        startDrawing={editor.startDrawing}
+      />
 
-        <Toolbar
-          isDrawing={editor.isDrawing}
-          activePointCount={editor.activePointCount}
-          loading={editor.loading}
-          onFinish={editor.finishPolygon}
-          onClearEdit={editor.clearEditedPolygon}
-          onLoad={editor.loadPolygons}
-          onClearLoaded={editor.clearLoadedPolygons}
-        />
-
-        <PolygonCanvas
-          polygons={editor.polygons}
-          hoveredDeleteId={editor.hoveredDeleteId}
-          activePolygonRef={editor.activePolygonRef}
-          isDrawing={editor.isDrawing}
-          addPoint={editor.addPoint}
-          startDrawing={editor.startDrawing}
-          finishPolygon={editor.finishPolygon}
-        />
-      </div>
-
-      <aside className="sidebar">
-        <PolygonList
-          polygons={editor.polygons}
-          setHoveredDeleteId={
-            editor.setHoveredDeleteId
-          }
-          onDelete={editor.removePolygon}
-        />
-      </aside>
+      <Sidebar
+        polygons={editor.polygons}
+        setHoveredDeleteId={editor.setHoveredDeleteId}
+        removePolygon={editor.removePolygon}
+      />
     </div>
   );
 }
