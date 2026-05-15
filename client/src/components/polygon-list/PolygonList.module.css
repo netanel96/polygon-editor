@@ -1,6 +1,6 @@
 .shell {
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   height: 100%;
   min-height: 0;
 }
@@ -9,12 +9,15 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 16px;
-  height: 76px;
-  padding: 24px 24px 0;
+  flex-wrap: wrap;
+  flex: 0 0 auto;
+  gap: 8px 16px;
+  min-height: 76px;
+  padding: 24px 24px 12px;
 }
 
 .title {
+  min-width: 0;
   margin: 0;
   color: #f8fafc;
   font-family:
@@ -38,6 +41,21 @@
   font-weight: 650;
 }
 
+.polygonCount {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 1 auto;
+  max-width: 100%;
+  padding: 4px 8px;
+  background: rgba(148, 163, 184, 0.09);
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  border-radius: 8px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  text-align: right;
+  white-space: normal;
+}
+
 .pointCount {
   display: block;
   margin-top: 3px;
@@ -50,12 +68,47 @@
 }
 
 .polygonList {
-  height: 100%;
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  height: auto;
   min-height: 0;
-  overflow-y: auto;
+  margin: 0;
+  overflow-y: scroll;
   overflow-x: hidden !important;
-  padding: 0 20px 24px 24px;
+  padding: 0 24px 24px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(2, 6, 23, 0.78),
+      rgba(15, 23, 42, 0.72)
+    )
+    right 8px top / 16px 100% no-repeat;
   scrollbar-gutter: stable;
+  scrollbar-color: rgba(226, 232, 240, 0.74) rgba(2, 6, 23, 0.72);
+  scrollbar-width: auto;
+}
+
+.polygonList::-webkit-scrollbar {
+  width: 16px;
+}
+
+.polygonList::-webkit-scrollbar-track {
+  background: rgba(2, 6, 23, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 999px;
+}
+
+.polygonList::-webkit-scrollbar-thumb {
+  background: rgba(226, 232, 240, 0.68);
+  border: 4px solid rgba(2, 6, 23, 0.72);
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.polygonList::-webkit-scrollbar-thumb:hover {
+  background: rgba(248, 250, 252, 0.82);
+  border: 4px solid rgba(2, 6, 23, 0.72);
+  background-clip: padding-box;
 }
 
 .polygonCard {

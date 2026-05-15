@@ -29,42 +29,42 @@ const api = vi.hoisted(() => ({
 
 vi.mock('./api/polygonApi', () => api);
 
-vi.mock('./components/polygon-canvas', () => ({
-  PolygonCanvas: ({
-    addPoint,
-    finishPolygon,
-    startDrawing,
-  }: {
-    addPoint: (point: { x: number; y: number }) => void;
-    finishPolygon: () => void;
-    startDrawing: () => void;
-  }) => (
-    <div>
-      <button
-        type="button"
-        onClick={() => {
-          startDrawing();
-          addPoint({ x: 0, y: 0 });
-        }}
-      >
-        Draw one point
-      </button>
+vi.mock('./components/polygon-canvas', async () => {
+  const { usePolygonEditorStore } = await import('./stores');
 
-      <button
-        type="button"
-        onClick={() => {
-          startDrawing();
-          addPoint({ x: 0, y: 0 });
-          addPoint({ x: 10, y: 0 });
-          addPoint({ x: 0, y: 10 });
-          void finishPolygon();
-        }}
-      >
-        Draw triangle
-      </button>
-    </div>
-  ),
-}));
+  return {
+    PolygonCanvas: () => {
+      const editor = usePolygonEditorStore();
+
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              editor.startDrawing();
+              editor.addPoint({ x: 0, y: 0 });
+            }}
+          >
+            Draw one point
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              editor.startDrawing();
+              editor.addPoint({ x: 0, y: 0 });
+              editor.addPoint({ x: 10, y: 0 });
+              editor.addPoint({ x: 0, y: 10 });
+              void editor.finishPolygon();
+            }}
+          >
+            Draw triangle
+          </button>
+        </div>
+      );
+    },
+  };
+});
 
 const savedPolygon: Polygon = {
   id: 'polygon-1',

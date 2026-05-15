@@ -1,12 +1,28 @@
+import { useEffect } from 'react';
+import { observer } from 'mobx-react-lite';
+
 import { styles as appShellStyles } from './components/app-shell';
 import { CanvasPanel } from './components/canvas-panel';
 import { Notification } from './components/notification';
 import { Sidebar } from './components/sidebar';
+import {
+  PolygonEditorStoreProvider,
+  usePolygonEditorStore,
+} from './stores';
 
-import { usePolygonEditor } from './hooks/usePolygonEditor';
+const AppContent = observer(function AppContent() {
+  const editor = usePolygonEditorStore();
 
-export default function App() {
-  const editor = usePolygonEditor();
+  useEffect(() => {
+    // The provider creates one store instance for the app lifetime.
+    // Connect once for that instance and disconnect on unmount.
+    editor.connect();
+
+    return () => {
+      editor.disconnect();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div
@@ -17,26 +33,17 @@ export default function App() {
         <Notification message={editor.error} />
       )}
 
-      <CanvasPanel
-        activePointCount={editor.activePointCount}
-        activePolygonRef={editor.activePolygonRef}
-        hoveredDeleteId={editor.hoveredDeleteId}
-        isDrawing={editor.isDrawing}
-        loading={editor.loading}
-        polygons={editor.polygons}
-        addPoint={editor.addPoint}
-        clearEditedPolygon={editor.clearEditedPolygon}
-        clearLoadedPolygons={editor.clearLoadedPolygons}
-        finishPolygon={editor.finishPolygon}
-        loadPolygons={editor.loadPolygons}
-        startDrawing={editor.startDrawing}
-      />
+      <CanvasPanel />
 
-      <Sidebar
-        polygons={editor.polygons}
-        setHoveredDeleteId={editor.setHoveredDeleteId}
-        removePolygon={editor.removePolygon}
-      />
+      <Sidebar />
     </div>
+  );
+});
+
+export default function App() {
+  return (
+    <PolygonEditorStoreProvider>
+      <AppContent />
+    </PolygonEditorStoreProvider>
   );
 }

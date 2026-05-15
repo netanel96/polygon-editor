@@ -1,26 +1,14 @@
+import { observer } from 'mobx-react-lite';
+
+import { usePolygonEditorStore } from '../../stores';
 import {sharedStyles} from '../shared';
 
 import styles from './Toolbar.module.css';
 
-type Props = {
-  isDrawing: boolean;
-  activePointCount: number;
-  loading: boolean;
-  onFinish: () => void;
-  onClearEdit: () => void;
-  onLoad: () => void;
-  onClearLoaded: () => void;
-};
+export const Toolbar = observer(function Toolbar() {
+  const editor = usePolygonEditorStore();
+  const { activePolygon, polygonCollection } = editor;
 
-export function Toolbar({
-  isDrawing,
-  activePointCount,
-  loading,
-  onFinish,
-  onClearEdit,
-  onLoad,
-  onClearLoaded,
-}: Props) {
   return (
     <div className={styles.toolbar}>
       <div className={styles.group}>
@@ -28,16 +16,22 @@ export function Toolbar({
 
         <button
           className={sharedStyles.quietButton}
-          onClick={onFinish}
-          disabled={!isDrawing || activePointCount === 0}
+          onClick={editor.finishPolygon}
+          disabled={
+            !activePolygon.isDrawing ||
+            activePolygon.pointCount === 0
+          }
         >
           Finish Polygon
         </button>
 
         <button
           className={sharedStyles.quietButton}
-          onClick={onClearEdit}
-          disabled={!isDrawing && activePointCount === 0}
+          onClick={editor.clearEditedPolygon}
+          disabled={
+            !activePolygon.isDrawing &&
+            activePolygon.pointCount === 0
+          }
         >
           Clear Edit
         </button>
@@ -48,26 +42,28 @@ export function Toolbar({
 
         <button
           className={sharedStyles.quietButton}
-          onClick={onLoad}
-          disabled={loading}
+          onClick={editor.loadPolygons}
+          disabled={polygonCollection.loading}
         >
-          {loading && (
+          {polygonCollection.loading && (
             <span
               className={sharedStyles.spinner}
               aria-hidden="true"
             />
           )}
-          {loading ? 'Loading...' : 'Reload Polygons'}
+          {polygonCollection.loading
+            ? 'Loading...'
+            : 'Reload Polygons'}
         </button>
 
         <button
           className={sharedStyles.quietButton}
-          onClick={onClearLoaded}
-          disabled={loading}
+          onClick={editor.clearLoadedPolygons}
+          disabled={polygonCollection.loading}
         >
           Clear Loaded
         </button>
       </div>
     </div>
   );
-}
+});
