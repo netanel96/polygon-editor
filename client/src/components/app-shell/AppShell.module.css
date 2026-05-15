@@ -1,6 +1,13 @@
 .shell {
   display: flex;
-  height: 100vh;
-  min-width: 1120px;
-  overflow: hidden;
+  width: 100%;
+  min-height: 100dvh;
+  min-width: 0;
+  overflow-x: hidden;
+}
+
+@media (max-width: 900px) {
+  .shell {
+    flex-direction: column;
+  }
 }

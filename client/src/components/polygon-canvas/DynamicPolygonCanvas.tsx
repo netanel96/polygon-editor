@@ -1,19 +1,13 @@
-import type {MutableRefObject, PointerEvent,} from 'react';
+import type {PointerEvent,} from 'react';
 import {useEffect, useRef,} from 'react';
+import { observer } from 'mobx-react-lite';
+
 import {Point} from '../../types/polygon';
+import { usePolygonEditorStore } from '../../stores';
 import {setupHiDPICanvas} from '../../utils/canvas';
 import {drawPolygon} from '../../utils/geometry';
 import {CANVAS_HEIGHT, CANVAS_WIDTH,} from './canvasConstants';
 import styles from './PolygonCanvas.module.css';
-
-type Props = {
-    activePointCount: number;
-    activePolygonRef: MutableRefObject<Point[]>;
-    isDrawing: boolean;
-    addPoint: (point: Point) => void;
-    finishPolygon: () => void;
-    startDrawing: () => void;
-};
 
 function drawPoint(
     context: CanvasRenderingContext2D,
@@ -44,14 +38,10 @@ function getCanvasPoint(
     };
 }
 
-export function DynamicPolygonCanvas({
-                                         activePointCount,
-                                         activePolygonRef,
-                                         isDrawing,
-                                         addPoint,
-                                         finishPolygon,
-                                         startDrawing,
-                                     }: Props) {
+export const DynamicPolygonCanvas = observer(
+    function DynamicPolygonCanvas() {
+    const editor = usePolygonEditorStore();
+    const { activePolygon } = editor;
     const canvasRef =
         useRef<HTMLCanvasElement | null>(null);
 
@@ -65,16 +55,16 @@ export function DynamicPolygonCanvas({
 
         context.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-        if (activePolygonRef.current.length === 0) {
+        if (activePolygon.points.length === 0) {
             return;
         }
 
-        drawPolygon(context, activePolygonRef.current, {
+        drawPolygon(context, activePolygon.points, {
             strokeStyle: '#ffcc00',
             fillStyle: 'rgba(255,204,0,0.12)',
         });
 
-        for (const point of activePolygonRef.current) {
+        for (const point of activePolygon.points) {
             drawPoint(context, point);
         }
     }
@@ -86,17 +76,17 @@ export function DynamicPolygonCanvas({
             return;
         }
 
-        if (!isDrawing) {
-            startDrawing();
+        if (!activePolygon.isDrawing) {
+            editor.startDrawing();
         }
 
-        addPoint(getCanvasPoint(event));
+        editor.addPoint(getCanvasPoint(event));
         requestAnimationFrame(draw);
     }
 
     function handleDoubleClick() {
-        if (isDrawing) {
-            finishPolygon();
+        if (activePolygon.isDrawing) {
+            void editor.finishPolygon();
         }
     }
 
@@ -110,7 +100,7 @@ export function DynamicPolygonCanvas({
 
     useEffect(() => {
         draw();
-    }, [activePointCount, isDrawing]);
+    }, [activePolygon.pointCount, activePolygon.isDrawing]);
 
     return (
         <canvas
@@ -120,4 +110,4 @@ export function DynamicPolygonCanvas({
             onDoubleClick={handleDoubleClick}
         />
     );
-}
+});

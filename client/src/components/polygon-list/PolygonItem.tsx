@@ -1,9 +1,10 @@
 import {classNames} from "../../utils/classNames.ts";
+import { usePolygonEditorStore } from "../../stores";
 import styles from "./PolygonList.module.css";
 import {sharedStyles} from "../shared";
 import {VirtualList} from "../virtual-list";
 import {Polygon} from "../../types/polygon.ts";
-import {DeleteProps, MAX_VISIBLE_POINTS, POINT_ROW_HEIGHT} from "./PolygonList.tsx";
+import {MAX_VISIBLE_POINTS, POINT_ROW_HEIGHT} from "./PolygonList.tsx";
 
 function needsPointScroller(pointCount: number) {
     return pointCount > MAX_VISIBLE_POINTS;
@@ -11,9 +12,11 @@ function needsPointScroller(pointCount: number) {
 
 type PolygonItemProps = {
     polygon: Polygon
-} & DeleteProps
+}
 
-export function PolygonItem({polygon, setHoveredDeleteId, onDelete}: PolygonItemProps) {
+export function PolygonItem({polygon}: PolygonItemProps) {
+    const editor = usePolygonEditorStore();
+
     return (
         <div
             className={classNames(
@@ -33,12 +36,16 @@ export function PolygonItem({polygon, setHoveredDeleteId, onDelete}: PolygonItem
                     className={sharedStyles.dangerButton}
                     onMouseEnter={() =>
                         !polygon.pending &&
-                        setHoveredDeleteId(polygon.id)
+                        editor.polygonCollection.setHoveredDeleteId(
+                            polygon.id,
+                        )
                     }
                     onMouseLeave={() =>
-                        setHoveredDeleteId(null)
+                        editor.polygonCollection.setHoveredDeleteId(
+                            null,
+                        )
                     }
-                    onClick={() => onDelete(polygon.id)}
+                    onClick={() => editor.removePolygon(polygon.id)}
                     disabled={polygon.pending}
                 >
                     Delete

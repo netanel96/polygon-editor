@@ -1,9 +1,22 @@
 .sidebar {
-  width: 360px;
-  min-width: 360px;
-  flex: 0 0 360px;
+  display: flex;
+  flex: 0 1 clamp(300px, 32vw, 380px);
+  width: clamp(300px, 32vw, 380px);
+  min-width: 280px;
+  min-height: 0;
   background: #111827;
   border-left: 1px solid rgba(255, 255, 255, 0.06);
   padding: 0;
   overflow: hidden;
+}
+
+@media (max-width: 900px) {
+  .sidebar {
+    flex: 1 1 42%;
+    width: 100%;
+    min-width: 0;
+    min-height: 260px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-left: 0;
+  }
 }

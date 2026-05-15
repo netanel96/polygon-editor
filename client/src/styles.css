@@ -21,7 +21,7 @@ body {
   background: #0b1020;
   color: white;
   overflow-x: auto;
-  overflow-y: hidden;
+  overflow-y: auto;
   font-feature-settings:
     "cv02" 1,
     "cv03" 1,

@@ -95,24 +95,6 @@ export class HttpPolygonGateway implements PolygonGateway {
   }
 }
 
-export const polygonGateway = new HttpPolygonGateway(
+export const polygonGateway: PolygonGateway = new HttpPolygonGateway(
   config.apiUrl,
 );
-
-export async function fetchPolygons() {
-  return polygonGateway.fetchAll();
-}
-
-export async function createPolygon(polygon: Polygon) {
-  return polygonGateway.create(polygon);
-}
-
-export async function deletePolygon(id: string) {
-  return polygonGateway.deleteById(id);
-}
-
-export function subscribeToPolygonChanges(
-  handlers: PolygonSubscriptionHandlers,
-) {
-  return polygonGateway.subscribe(handlers);
-}

@@ -1,19 +1,16 @@
 import {useEffect, useRef} from 'react';
-import {Polygon} from '../../types/polygon';
+import { observer } from 'mobx-react-lite';
+
+import { usePolygonEditorStore } from '../../stores';
 import {setupHiDPICanvas} from '../../utils/canvas';
 import {drawPolygon} from '../../utils/geometry';
 import {CANVAS_HEIGHT, CANVAS_WIDTH,} from './canvasConstants';
 import styles from './PolygonCanvas.module.css';
 
-type Props = {
-  hoveredDeleteId: string | null;
-  polygons: Polygon[];
-};
-
-export function StaticPolygonCanvas({
-  hoveredDeleteId,
-  polygons,
-}: Props) {
+export const StaticPolygonCanvas = observer(
+  function StaticPolygonCanvas() {
+  const { polygonCollection } = usePolygonEditorStore();
+  const { hoveredDeleteId, polygons } = polygonCollection;
   const canvasRef =
     useRef<HTMLCanvasElement | null>(null);
   const imageRef = useRef<HTMLImageElement | null>(
@@ -76,4 +73,4 @@ export function StaticPolygonCanvas({
   return (
     <canvas ref={canvasRef} className={styles.canvas} />
   );
-}
+});

@@ -19,52 +19,54 @@ import type { Polygon } from './types/polygon';
 import App from './App';
 
 const api = vi.hoisted(() => ({
-  fetchPolygons: vi.fn<() => Promise<Polygon[]>>(),
-  createPolygon:
+  fetchAll: vi.fn<() => Promise<Polygon[]>>(),
+  create:
     vi.fn<(polygon: Polygon) => Promise<Polygon>>(),
-  deletePolygon: vi.fn<(id: string) => Promise<void>>(),
-  subscribeToPolygonChanges:
+  deleteById: vi.fn<(id: string) => Promise<void>>(),
+  subscribe:
     vi.fn<() => () => void>(),
 }));
 
-vi.mock('./api/polygonApi', () => api);
-
-vi.mock('./components/polygon-canvas', () => ({
-  PolygonCanvas: ({
-    addPoint,
-    finishPolygon,
-    startDrawing,
-  }: {
-    addPoint: (point: { x: number; y: number }) => void;
-    finishPolygon: () => void;
-    startDrawing: () => void;
-  }) => (
-    <div>
-      <button
-        type="button"
-        onClick={() => {
-          startDrawing();
-          addPoint({ x: 0, y: 0 });
-        }}
-      >
-        Draw one point
-      </button>
-
-      <button
-        type="button"
-        onClick={() => {
-          startDrawing();
-          addPoint({ x: 0, y: 0 });
-          addPoint({ x: 10, y: 0 });
-          addPoint({ x: 0, y: 10 });
-          void finishPolygon();
-        }}
-      >
-        Draw triangle
-      </button>
-    </div>
-  ),
+vi.mock('./api/polygonApi', () => ({
+  polygonGateway: api,
 }));
+
+vi.mock('./components/polygon-canvas', async () => {
+  const { usePolygonEditorStore } = await import('./stores');
+
+  return {
+    PolygonCanvas: () => {
+      const editor = usePolygonEditorStore();
+
+      return (
+        <div>
+          <button
+            type="button"
+            onClick={() => {
+              editor.startDrawing();
+              editor.addPoint({ x: 0, y: 0 });
+            }}
+          >
+            Draw one point
+          </button>
+
+          <button
+            type="button"
+            onClick={() => {
+              editor.startDrawing();
+              editor.addPoint({ x: 0, y: 0 });
+              editor.addPoint({ x: 10, y: 0 });
+              editor.addPoint({ x: 0, y: 10 });
+              void editor.finishPolygon();
+            }}
+          >
+            Draw triangle
+          </button>
+        </div>
+      );
+    },
+  };
+});
 
 const savedPolygon: Polygon = {
   id: 'polygon-1',
@@ -104,22 +106,22 @@ describe('App polygon operations', () => {
       randomUUID: () => 'temp-id',
     });
 
-    api.fetchPolygons.mockResolvedValue([]);
-    api.createPolygon.mockImplementation(async polygon => ({
+    api.fetchAll.mockResolvedValue([]);
+    api.create.mockImplementation(async polygon => ({
       ...polygon,
       id: 'created-polygon',
       pending: undefined,
     }));
-    api.deletePolygon.mockResolvedValue(undefined);
-    api.subscribeToPolygonChanges.mockReturnValue(() => {});
+    api.deleteById.mockResolvedValue(undefined);
+    api.subscribe.mockReturnValue(() => {});
   });
 
   it('loads polygons from the API and shows them in the list', async () => {
-    api.fetchPolygons.mockResolvedValue([savedPolygon]);
+    api.fetchAll.mockResolvedValue([savedPolygon]);
 
     render(<App />);
 
-    expect(api.fetchPolygons).toHaveBeenCalledTimes(1);
+    expect(api.fetchAll).toHaveBeenCalledTimes(1);
     expect(
       await screen.findByText('Triangle'),
     ).toBeInTheDocument();
@@ -129,7 +131,7 @@ describe('App polygon operations', () => {
   it('creates a polygon optimistically and replaces it with the saved polygon', async () => {
     const createRequest = deferred<Polygon>();
 
-    api.createPolygon.mockReturnValue(
+    api.create.mockReturnValue(
       createRequest.promise,
     );
 
@@ -148,7 +150,7 @@ describe('App polygon operations', () => {
     });
 
     expect(pendingDeleteButton).toBeDisabled();
-    expect(api.createPolygon).toHaveBeenCalledWith(
+    expect(api.create).toHaveBeenCalledWith(
       expect.objectContaining({
         id: 'temp-temp-id',
         name: 'Polygon 1',
@@ -202,7 +204,7 @@ describe('App polygon operations', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Add 2 more points to finish this polygon.',
     );
-    expect(api.createPolygon).not.toHaveBeenCalled();
+    expect(api.create).not.toHaveBeenCalled();
   });
 
   it('clears the active edited polygon without saving it', async () => {
@@ -227,11 +229,11 @@ describe('App polygon operations', () => {
     );
 
     expect(finishButton).toBeDisabled();
-    expect(api.createPolygon).not.toHaveBeenCalled();
+    expect(api.create).not.toHaveBeenCalled();
   });
 
   it('clears loaded polygons from the current view without deleting them from the API', async () => {
-    api.fetchPolygons.mockResolvedValue([savedPolygon]);
+    api.fetchAll.mockResolvedValue([savedPolygon]);
 
     render(<App />);
 
@@ -248,11 +250,11 @@ describe('App polygon operations', () => {
     expect(
       screen.queryByText('Triangle'),
     ).not.toBeInTheDocument();
-    expect(api.deletePolygon).not.toHaveBeenCalled();
+    expect(api.deleteById).not.toHaveBeenCalled();
   });
 
   it('removes a polygon after a successful delete request', async () => {
-    api.fetchPolygons.mockResolvedValue([savedPolygon]);
+    api.fetchAll.mockResolvedValue([savedPolygon]);
 
     render(<App />);
 
@@ -266,7 +268,7 @@ describe('App polygon operations', () => {
       }),
     );
 
-    expect(api.deletePolygon).toHaveBeenCalledWith(
+    expect(api.deleteById).toHaveBeenCalledWith(
       'polygon-1',
     );
     expect(
@@ -275,8 +277,8 @@ describe('App polygon operations', () => {
   });
 
   it('restores a polygon and shows a dismissible notification when delete fails', async () => {
-    api.fetchPolygons.mockResolvedValue([savedPolygon]);
-    api.deletePolygon.mockRejectedValue(
+    api.fetchAll.mockResolvedValue([savedPolygon]);
+    api.deleteById.mockRejectedValue(
       new Error('delete failed'),
     );
 
