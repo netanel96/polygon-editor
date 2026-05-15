@@ -1,13 +1,8 @@
-import { useEffect, useRef } from 'react';
-
-import { Polygon } from '../../types/polygon';
-import { setupHiDPICanvas } from '../../utils/canvas';
-import { drawPolygon } from '../../utils/geometry';
-
-import {
-  CANVAS_HEIGHT,
-  CANVAS_WIDTH,
-} from './canvasConstants';
+import {useEffect, useRef} from 'react';
+import {Polygon} from '../../types/polygon';
+import {setupHiDPICanvas} from '../../utils/canvas';
+import {drawPolygon} from '../../utils/geometry';
+import {CANVAS_HEIGHT, CANVAS_WIDTH,} from './canvasConstants';
 import styles from './PolygonCanvas.module.css';
 
 type Props = {

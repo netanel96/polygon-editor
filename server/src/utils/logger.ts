@@ -69,7 +69,7 @@ function formatLog(
   });
 
   return [
-    new Date().toISOString(),
+    new Date().toLocaleString(),
     level.toUpperCase().padEnd(5),
     message,
     detailsText,
@@ -85,7 +85,7 @@ function writeToFile(line: string) {
     recursive: true,
   });
 
-  fs.appendFileSync(config.logFilePath, `${line}\n`);
+  fs.appendFile(config.logFilePath, `${line}\n`,()=>{});
 }
 
 function writeLog(

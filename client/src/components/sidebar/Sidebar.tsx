@@ -1,5 +1,5 @@
-import { Polygon } from '../../types/polygon';
-import { PolygonList } from '../polygon-list';
+import {Polygon} from '../../types/polygon';
+import {PolygonList} from '../polygon-list';
 
 import styles from './Sidebar.module.css';
 

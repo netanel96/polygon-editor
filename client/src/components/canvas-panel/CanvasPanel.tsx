@@ -1,8 +1,8 @@
-import type { MutableRefObject } from 'react';
+import type {MutableRefObject} from 'react';
 
-import { Point, Polygon } from '../../types/polygon';
-import { PolygonCanvas } from '../polygon-canvas';
-import { Toolbar } from '../toolbar';
+import {Point, Polygon} from '../../types/polygon';
+import {PolygonCanvas} from '../polygon-canvas';
+import {Toolbar} from '../toolbar';
 
 import styles from './CanvasPanel.module.css';
 

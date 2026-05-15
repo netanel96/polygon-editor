@@ -1,4 +1,4 @@
-import { ReactNode, UIEvent, useMemo, useState } from 'react';
+import {ReactNode, UIEvent, useMemo, useState} from 'react';
 
 type Measurement = {
   top: number;

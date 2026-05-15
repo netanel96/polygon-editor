@@ -1,4 +1,4 @@
-import { sharedStyles } from '../shared';
+import {sharedStyles} from '../shared';
 
 import styles from './Toolbar.module.css';
 
