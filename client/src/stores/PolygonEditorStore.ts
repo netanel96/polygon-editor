@@ -1,11 +1,6 @@
-import { makeAutoObservable, runInAction } from 'mobx';
+import { makeAutoObservable } from 'mobx';
 
-import {
-  createPolygon,
-  deletePolygon,
-  fetchPolygons,
-  subscribeToPolygonChanges,
-} from '../api/polygonApi';
+import { polygonGateway } from '../api/polygonApi';
 import { Point, Polygon } from '../types/polygon';
 
 import { ActivePolygonStore } from './ActivePolygonStore';
@@ -58,23 +53,22 @@ export class PolygonEditorStore {
     return this.feedback.error;
   }
 
-  connect() {
+  init() {
     void this.loadPolygons();
 
-    this.unsubscribeFromPolygonChanges =
-      subscribeToPolygonChanges({
-        onCreate: polygon => {
-          this.polygonCollection.upsertPolygon(polygon);
-        },
-        onDelete: id => {
-          this.polygonCollection.removePolygon(id);
-        },
-      });
+    this.unsubscribeFromPolygonChanges = polygonGateway.subscribe({
+      onCreate: polygon => {
+        this.polygonCollection.upsertPolygon(polygon);
+      },
+      onDelete: id => {
+        this.polygonCollection.removePolygon(id);
+      },
+    });
 
-    return this.disconnect;
+    return this.unsubscribeFromPolygonChangesEvents;
   }
 
-  disconnect() {
+  unsubscribeFromPolygonChangesEvents() {
     this.unsubscribeFromPolygonChanges?.();
     this.unsubscribeFromPolygonChanges = null;
   }
@@ -88,19 +82,13 @@ export class PolygonEditorStore {
       this.polygonCollection.setLoading(true);
       this.feedback.clearError();
 
-      const polygons = await fetchPolygons();
+      const polygons = await polygonGateway.fetchAll();
 
-      runInAction(() => {
-        this.polygonCollection.setPolygons(polygons);
-      });
+      this.polygonCollection.setPolygons(polygons);
     } catch {
-      runInAction(() => {
-        this.feedback.setError('Failed to load polygons');
-      });
+      this.feedback.setError('Failed to load polygons');
     } finally {
-      runInAction(() => {
-        this.polygonCollection.setLoading(false);
-      });
+      this.polygonCollection.setLoading(false);
     }
   }
 
@@ -145,21 +133,17 @@ export class PolygonEditorStore {
       this.feedback.clearError();
 
       const createdPolygon =
-        await createPolygon(optimisticPolygon);
+        await polygonGateway.create(optimisticPolygon);
 
-      runInAction(() => {
-        this.polygonCollection.replaceOptimisticPolygon(
-          optimisticPolygon.id,
-          createdPolygon,
-        );
-      });
+      this.polygonCollection.replaceOptimisticPolygon(
+        optimisticPolygon.id,
+        createdPolygon,
+      );
     } catch {
-      runInAction(() => {
-        this.polygonCollection.removePolygon(
-          optimisticPolygon.id,
-        );
-        this.feedback.setError('Failed to save polygon');
-      });
+      this.polygonCollection.removePolygon(
+        optimisticPolygon.id,
+      );
+      this.feedback.setError('Failed to save polygon');
     }
   }
 
@@ -176,12 +160,10 @@ export class PolygonEditorStore {
     try {
       this.feedback.clearError();
 
-      await deletePolygon(id);
+      await polygonGateway.deleteById(id);
     } catch {
-      runInAction(() => {
-        this.polygonCollection.appendPolygon(polygonToDelete);
-        this.feedback.setError('Failed to delete polygon');
-      });
+      this.polygonCollection.appendPolygon(polygonToDelete);
+      this.feedback.setError('Failed to delete polygon');
     }
   }
 }

@@ -14,14 +14,12 @@ const AppContent = observer(function AppContent() {
   const editor = usePolygonEditorStore();
 
   useEffect(() => {
-    // The provider creates one store instance for the app lifetime.
-    // Connect once for that instance and disconnect on unmount.
-    editor.connect();
+    editor.init();
 
     return () => {
-      editor.disconnect();
+      editor.unsubscribeFromPolygonChangesEvents();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, []);
 
   return (
