@@ -1,0 +1,9 @@
+.sidebar {
+  width: 360px;
+  min-width: 360px;
+  flex: 0 0 360px;
+  background: #111827;
+  border-left: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 0;
+  overflow: hidden;
+}

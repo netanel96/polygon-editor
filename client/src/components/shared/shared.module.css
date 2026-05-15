@@ -1,0 +1,107 @@
+.button {
+  border: none;
+  outline: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 18px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: white;
+  transition:
+    transform 0.16s ease,
+    opacity 0.16s ease,
+    background 0.2s ease,
+    box-shadow 0.22s ease,
+    filter 0.22s ease;
+}
+
+.button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.28) saturate(1.08);
+  box-shadow:
+    0 12px 26px rgba(0, 0, 0, 0.24),
+    0 0 0 1px rgba(255, 255, 255, 0.11),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.button:active:not(:disabled) {
+  transform: translateY(0);
+  filter: brightness(1.04);
+}
+
+.button:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+  box-shadow: none;
+  filter: none;
+}
+
+.quietButton {
+  composes: button;
+  background: rgba(148, 163, 184, 0.14);
+  color: #e2e8f0;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.quietButton:hover:not(:disabled) {
+  background: rgba(203, 213, 225, 0.2);
+}
+
+.dangerButton {
+  composes: button;
+  background: rgba(248, 113, 113, 0.1);
+  color: #fecaca;
+  box-shadow:
+    inset 0 0 0 1px rgba(248, 113, 113, 0.28);
+}
+
+.dangerButton:hover:not(:disabled) {
+  background: rgba(248, 113, 113, 0.17);
+}
+
+.spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.34);
+  border-top-color: #ffffff;
+  border-radius: 999px;
+  animation: spin 0.72s linear infinite;
+}
+
+.scrollbar {
+  scrollbar-color: rgba(148, 163, 184, 0.54) transparent;
+  scrollbar-width: thin;
+}
+
+.scrollbar::-webkit-scrollbar {
+  width: 10px;
+}
+
+.scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.36);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: padding-box;
+}
+
+.scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(203, 213, 225, 0.52);
+  border: 3px solid transparent;
+  background-clip: padding-box;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
