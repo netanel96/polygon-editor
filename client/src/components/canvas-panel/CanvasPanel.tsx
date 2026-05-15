@@ -6,11 +6,15 @@ import styles from './CanvasPanel.module.css';
 export function CanvasPanel() {
   return (
     <main className={styles.panel}>
-      <h1 className={styles.title}>Polygon Editor</h1>
+      <div className={styles.content}>
+        <div className={styles.header}>
+          <h1 className={styles.title}>Polygon Editor</h1>
 
-      <Toolbar />
+          <Toolbar />
+        </div>
 
-      <PolygonCanvas />
+        <PolygonCanvas />
+      </div>
     </main>
   );
 }

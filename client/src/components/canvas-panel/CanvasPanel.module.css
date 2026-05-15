@@ -1,9 +1,36 @@
 .panel {
-  flex: 1;
-  padding: 24px;
+  --panel-chrome-height: 132px;
+
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  flex: 1 1 auto;
+  gap: 10px;
+  min-width: 0;
+  min-height: 0;
+  padding: clamp(12px, 1vw, 16px);
+  overflow: visible;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  align-self: center;
+  gap: 10px;
+  width: min(
+    100%,
+    1180px,
+    max(480px, calc((100dvh - var(--panel-chrome-height)) * 1.5))
+  );
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  flex-direction: column;
+  flex: 0 0 auto;
+  gap: 10px;
+  min-width: 0;
 }
 
 .title {
@@ -17,8 +44,24 @@
     ui-sans-serif,
     system-ui,
     sans-serif;
-  font-size: 34px;
+  font-size: 31px;
   font-weight: 760;
   line-height: 1.05;
   letter-spacing: 0;
+}
+
+@media (max-width: 900px) {
+  .panel {
+    --panel-chrome-height: 126px;
+
+    flex: 1 1 58%;
+  }
+
+  .header {
+    gap: 10px;
+  }
+
+  .title {
+    font-size: 27px;
+  }
 }
