@@ -32,3 +32,5 @@ Client env explanation:
 | -------------- | --------------------------------------------------- |
 | `VITE_API_URL` | Backend API base URL used by the client application |
 
+running with docker-compose with scaled server:
+docker-compose up -d --build --scale server=3 

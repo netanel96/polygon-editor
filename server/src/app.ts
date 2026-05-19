@@ -3,14 +3,16 @@ import express from 'express';
 
 import mongoose from 'mongoose';
 
-import { ZodError } from 'zod';
+import {ZodError} from 'zod';
 
-import type { PolygonModelLike } from './polygons/persistence';
-import { createPolygonRouter } from './polygons/http';
+import type {PolygonModelLike} from './polygons/persistence';
+import {createPolygonRouter} from './polygons/http';
 
-import { config } from './config';
-import { logger } from './utils/logger';
-import { sleep } from './utils/sleep';
+import {config} from './config';
+import {logger} from './utils/logger';
+import {sleep} from './utils/sleep';
+import {ConnectionBackedPolygonEventBroker, PolygonConnectionStore, type PolygonEventBroker} from "./polygons/events";
+import {initServerPubSub, registerServerPubSubHandlers} from "./polygons/server-events/shared/init-server-pub-sub";
 
 type AppOptions = {
   polygonModel?: PolygonModelLike;
@@ -36,7 +38,12 @@ function getStatusCode(error: unknown) {
   return 500;
 }
 
-export function createApp(options: AppOptions = {}) {
+export async function createApp(options: AppOptions = {}) {
+  const connections: PolygonConnectionStore = new PolygonConnectionStore();
+  const eventBroker: PolygonEventBroker = new ConnectionBackedPolygonEventBroker(connections);
+  await initServerPubSub();
+  registerServerPubSubHandlers(eventBroker);
+
   const app = express();
 
   app.use(
@@ -93,6 +100,8 @@ export function createApp(options: AppOptions = {}) {
   app.use(
     '/polygons',
     createPolygonRouter({
+      connections,
+      eventBroker,
       polygonModel: options.polygonModel,
       wait: options.wait ?? sleep,
     }),
@@ -131,4 +140,4 @@ export function createApp(options: AppOptions = {}) {
   return app;
 }
 
-export default createApp();
+export default createApp;

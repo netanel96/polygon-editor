@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import util from 'node:util';
 
-import { config } from '../config';
+import {config} from '../config';
 
-type LogLevel = 'info' | 'error';
+type LogLevel = 'info' | 'error' | 'warning';
 
 type LogDetails = Record<string, unknown>;
 
@@ -114,6 +114,10 @@ export const logger = {
 
   error(message: string, details?: LogDetails) {
     writeLog('error', message, details);
+  },
+
+  warning(message: string, details?: LogDetails) {
+    writeLog('warning', message, details);
   },
 
   childError(error: unknown) {

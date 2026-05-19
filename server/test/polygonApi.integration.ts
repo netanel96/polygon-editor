@@ -1,13 +1,13 @@
 import assert from 'node:assert/strict';
-import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { after, before, describe, it } from 'node:test';
+import {createServer, type Server} from 'node:http';
+import type {AddressInfo} from 'node:net';
+import {after, before, describe, it} from 'node:test';
 
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 
-import { createApp } from '../src/app';
-import { config } from '../src/config';
+import {createApp} from '../src/app';
+import {config} from '../src/config';
 
 dotenv.config();
 
@@ -52,7 +52,7 @@ describe('polygon API MongoDB integration', () => {
     await mongoose.connect(getIntegrationMongoUrl());
     await mongoose.connection.dropDatabase();
 
-    const app = createApp();
+    const app = await createApp();
 
     server = createServer(app);
 

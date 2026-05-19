@@ -37,4 +37,5 @@ export const config = {
   logOutput: process.env.LOG_OUTPUT ?? 'console,file',
   logTransport: process.env.LOG_TRANSPORT ?? 'local',
   apiRequestDelayMs: getApiRequestDelayMs(),
+  natsUrl: process.env.NATS_URL || "nats://localhost:4222"
 };

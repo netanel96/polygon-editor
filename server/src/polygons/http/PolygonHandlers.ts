@@ -1,13 +1,11 @@
-import type { Request, Response } from 'express';
+import type {Request, Response} from "express";
 
-import { config } from '../../config';
-import { createPolygonSchema, type PolygonRepository } from '../domain';
-import type {
-  PolygonConnectionStore,
-  PolygonEventBroker,
-} from '../events';
+import {config} from "../../config";
+import {createPolygonSchema, type PolygonRepository} from "../domain";
+import type {PolygonConnectionStore, PolygonEventBroker} from "../events";
 
-import { addSseConnection } from './ssePolygonConnection';
+import {addSseConnection} from "./ssePolygonConnection";
+import {serverPubSub} from "../server-events/shared/messaging/pub-sub-manager.interface";
 
 type PolygonHandlersOptions = {
   connections: PolygonConnectionStore;
@@ -16,9 +14,7 @@ type PolygonHandlersOptions = {
   wait: (ms: number) => Promise<unknown>;
 };
 
-async function waitForApiDelay(
-  wait: PolygonHandlersOptions['wait'],
-) {
+async function waitForApiDelay(wait: PolygonHandlersOptions["wait"]) {
   await wait(config.apiRequestDelayMs);
 }
 
@@ -42,7 +38,7 @@ export class PolygonHandlers {
   private readonly connections: PolygonConnectionStore;
   private readonly eventBroker: PolygonEventBroker;
   private readonly polygonRepository: PolygonRepository;
-  private readonly wait: PolygonHandlersOptions['wait'];
+  private readonly wait: PolygonHandlersOptions["wait"];
 
   constructor({
     connections,
@@ -56,31 +52,19 @@ export class PolygonHandlers {
     this.wait = wait;
   }
 
-  listPolygons = async (
-    _request: Request,
-    response: Response,
-  ) => {
+  listPolygons = async (_request: Request, response: Response) => {
     await waitForApiDelay(this.wait);
 
     response.json(await this.polygonRepository.findAll());
   };
 
-  addPolygonEventConnection = (
-    request: Request,
-    response: Response,
-  ) => {
-    const removeConnection = addSseConnection(
-      this.connections,
-      response,
-    );
+  addPolygonEventConnection = (request: Request, response: Response) => {
+    const removeConnection = addSseConnection(this.connections, response);
 
-    request.on('close', removeConnection);
+    request.on("close", removeConnection);
   };
 
-  createPolygon = async (
-    request: Request,
-    response: Response,
-  ) => {
+  createPolygon = async (request: Request, response: Response) => {
     await waitForApiDelay(this.wait);
 
     const parsed = parseCreatePolygonRequest(request);
@@ -89,26 +73,24 @@ export class PolygonHandlers {
       points: parsed.points,
     });
 
+    serverPubSub.publish("polygon.created", polygon);
     this.eventBroker.publish({
-      type: 'created',
+      type: "created",
       polygon,
     });
 
     response.json(polygon);
   };
 
-  deletePolygon = async (
-    request: Request,
-    response: Response,
-  ) => {
+  deletePolygon = async (request: Request, response: Response) => {
     await waitForApiDelay(this.wait);
 
     const polygonId = getPolygonId(request);
 
     await this.polygonRepository.deleteById(polygonId);
-
+    serverPubSub.publish("polygon.deleted", polygonId);
     this.eventBroker.publish({
-      type: 'deleted',
+      type: "deleted",
       id: polygonId,
     });
 

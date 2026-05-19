@@ -1,11 +1,11 @@
-import { makeAutoObservable } from 'mobx';
+import {makeAutoObservable} from 'mobx';
 
-import { polygonGateway } from '../api/polygonApi';
-import { Point, Polygon } from '../types/polygon';
+import {polygonGateway} from '../api/polygonApi';
+import {Point, Polygon} from '../types/polygon';
 
-import { ActivePolygonStore } from './ActivePolygonStore';
-import { EditorFeedbackStore } from './EditorFeedbackStore';
-import { PolygonCollectionStore } from './PolygonCollectionStore';
+import {ActivePolygonStore} from './ActivePolygonStore';
+import {EditorFeedbackStore} from './EditorFeedbackStore';
+import {PolygonCollectionStore} from './PolygonCollectionStore';
 
 function getRemainingPointMessage(pointCount: number) {
   const remainingPointCount = 3 - pointCount;
@@ -44,7 +44,7 @@ export class PolygonEditorStore {
         feedback: false,
         polygonCollection: false,
         unsubscribeFromPolygonChanges: false,
-      },
+      } as Record<string, any>,
       { autoBind: true },
     );
   }

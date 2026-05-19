@@ -1,10 +1,10 @@
 import assert from 'node:assert/strict';
-import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
-import { describe, it } from 'node:test';
+import {createServer, type Server} from 'node:http';
+import type {AddressInfo} from 'node:net';
+import {describe, it} from 'node:test';
 
-import { createApp } from '../src/app';
-import type { PolygonModelLike } from '../src/routes/polygonRoutes';
+import {createApp} from '../src/app';
+import type {PolygonModelLike} from '../src/routes/polygonRoutes';
 
 type PolygonInput = {
   name: string;
@@ -70,7 +70,7 @@ async function withApi(
   polygonModel: PolygonModelLike,
   run: (baseUrl: string) => Promise<void>,
 ) {
-  const app = createApp({
+  const app = await createApp({
     polygonModel,
     wait: async () => undefined,
   });
