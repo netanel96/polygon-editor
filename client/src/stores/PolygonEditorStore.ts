@@ -43,7 +43,6 @@ export class PolygonEditorStore {
         activePolygon: false,
         feedback: false,
         polygonCollection: false,
-        unsubscribeFromPolygonChanges: false,
       },
       { autoBind: true },
     );
